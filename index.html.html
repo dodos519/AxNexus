@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AxNexus — Learning & Development Hub</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    *{box-sizing:border-box;}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+    @keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.fadein{animation:fadein .22s ease;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.pulse{animation:pulse 1.4s ease infinite;}
+    @keyframes pop{0%{opacity:0;transform:scale(.93)}100%{opacity:1;transform:scale(1)}}.pop{animation:pop .18s ease;}
+    input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 2px #a5b4fc;}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script id="app-src" type="text/jsx-source">
+const {useState,useContext,createContext,useRef,useEffect,useMemo}=React;
+
+/* ── LANG ── */
+const LangCtx=createContext({lang:"en",toggle:()=>{}});
+const useLang=()=>useContext(LangCtx);
+const T={
+  en:{
+    app:"AxNexus",tag:"Learning & Development Hub",
+    tuition:"Tuition Centre",corporate:"Corporate L&D",
+    teacher:"Teacher / Trainer",student:"Student / Learner",
+    parent:"Parent / Manager",admin:"Administrator",
+    login:"Sign In",logout:"Sign Out",
+    overview:"Overview",marking:"Marking",schedule:"Schedule",
+    finance:"Finance",crm:"CRM",growth:"Growth Profile",
+    results:"Results",discussion:"Discussion",resources:"Resources",
+    staff:"Staff",analytics:"Analytics",settings:"Settings",
+    save:"Save",cancel:"Cancel",send:"Send",close:"Close",
+    lanceIdx:"Lance Index",rank:"Global Rank",
+    noData:"No data yet",
+    select_role:"Select your role to continue",
+    sign_in:"Sign in",
+    tagline:"Learning & Development Hub",
+    r_teacher:"Teacher",r_student:"Student",r_parent:"Parent",r_admin:"Admin",
+    d_teacher:"Manage classes, mark work, track student growth",
+    d_student:"View results, schedule and growth profile",
+    d_parent:"Monitor your child's progress and payments",
+    d_admin:"Centre overview, finance, CRM and staff",
+    corp_note:"Corporate L&D mode available — contact your administrator"
+  },
+  zh:{
+    app:"AxNexus",tag:"学习与发展中心",
+    tuition:"补习中心",corporate:"企业培训",
+    teacher:"教师 / 讲师",student:"学员 / 学生",
+    parent:"家长 / 主管",admin:"管理员",
+    login:"登录",logout:"退出",
+    overview:"概览",marking:"批改",schedule:"课程表",
+    finance:"财务",crm:"客户管理",growth:"成长档案",
+    results:"成绩",discussion:"讨论",resources:"资源",
+    staff:"员工",analytics:"分析",settings:"设置",
+    save:"保存",cancel:"取消",send:"发送",close:"关闭",
+    lanceIdx:"兰斯指数",rank:"全球排名",
+    noData:"暂无数据",
+    select_role:"请选择您的身份",
+    sign_in:"登录",
+    tagline:"学习与发展中心",
+    r_teacher:"教师",r_student:"学生",r_parent:"家长",r_admin:"管理员",
+    d_teacher:"管理课程、批改作业、跟踪学生成长",
+    d_student:"查看成绩、课程表和成长档案",
+    d_parent:"监控孩子的进度和付款情况",
+    d_admin:"中心概览、财务、客户管理和员工",
+    corp_note:"企业培训模式可用 — 请联系管理员"
+  }
+};
+
+/* ── SAMPLE DATA ── */
+const STUDENTS=[
+  {id:1,name:"Ahmad Faizi",grade:"Std 4A",branch:"PJ",avatar:"👦",
+   lance:[68,72,75,79,83,86],testScores:[78,82,85,80,88],
+   strengths:["Math","Science"],weaknesses:["BM Essay"],
+   errorSets:[{topic:"Fractions",count:8},{topic:"Grammar",count:12}],
+   globalRank:1840,totalStudents:12000,plan:"UPSR 2025 — target A in all subjects"},
+  {id:2,name:"Priya Nair",grade:"Form 2B",branch:"PJ",avatar:"👧",
+   lance:[71,74,78,82,85,89],testScores:[85,88,90,87,92],
+   strengths:["English","History"],weaknesses:["Add Math"],
+   errorSets:[{topic:"Quadratics",count:5},{topic:"Trigonometry",count:9}],
+   globalRank:920,totalStudents:12000,plan:"PT3 2025 — target straight A"},
+  {id:3,name:"Wei Jian Lim",grade:"Form 5A",branch:"SS2",avatar:"👦",
+   lance:[80,83,85,88,90,93],testScores:[90,92,88,95,91],
+   strengths:["Physics","Chemistry"],weaknesses:["EST"],
+   errorSets:[{topic:"Organic Chemistry",count:6}],
+   globalRank:340,totalStudents:12000,plan:"SPM 2025 — scholarship target"}
+];
+
+const TEACHERS=[
+  {id:1,name:"Ms. Sarah Lim",subject:"Math / Science",tier:"Senior",rate:120,sessions:42,rating:4.9},
+  {id:2,name:"Mr. Raj Kumar",subject:"English / BM",tier:"Principal",rate:150,sessions:38,rating:4.8},
+  {id:3,name:"Ms. Chen Wei",subject:"Add Math / Physics",tier:"Master",rate:180,sessions:35,rating:5.0}
+];
+
+const FIN_RECORDS=[
+  {id:1,sid:1,date:"2025-06-01",desc:"Math — Ms. Sarah Lim",amount:120,type:"debit",
+   breakdown:{teacher:60,rent:20,tax:6,admin:10,profit:24}},
+  {id:2,sid:1,date:"2025-06-03",desc:"Science — Ms. Sarah Lim",amount:120,type:"debit",
+   breakdown:{teacher:60,rent:20,tax:6,admin:10,profit:24}},
+  {id:3,sid:2,date:"2025-06-02",desc:"English — Mr. Raj Kumar",amount:150,type:"debit",
+   breakdown:{teacher:75,rent:25,tax:7.5,admin:12,profit:30.5}},
+  {id:4,sid:3,date:"2025-06-04",desc:"Physics — Ms. Chen Wei",amount:180,type:"debit",
+   breakdown:{teacher:90,rent:30,tax:9,admin:15,profit:36}}
+];
+
+const WALLETS=[
+  {sid:1,balance:480,topup:600,used:120},
+  {sid:2,balance:150,topup:600,used:450},
+  {sid:3,balance:720,topup:900,used:180}
+];
+
+const CRM_SOURCES=[
+  {src:"Online Workshop",leads:45,enrolled:18,rev:8100,clr:"#6366f1"},
+  {src:"Social Media",leads:38,enrolled:12,rev:5400,clr:"#f59e0b"},
+  {src:"Referral",leads:52,enrolled:28,rev:12600,clr:"#10b981"},
+  {src:"Walk-in",leads:22,enrolled:10,rev:4500,clr:"#ef4444"},
+  {src:"Corporate HR",leads:15,enrolled:8,rev:6000,clr:"#8b5cf6"}
+];
+
+const CRM_PIPELINE=[
+  {stage:"Leads",count:172},{stage:"Contacted",count:98},
+  {stage:"Trial Class",count:56},{stage:"Enrolled",count:76},{stage:"Retained",count:58}
+];
+
+const SESSIONS=[
+  {id:1,date:"2025-06-16",time:"9:00–10:30",subject:"Math",teacher:"Ms. Sarah Lim",room:"A1",students:[1,2]},
+  {id:2,date:"2025-06-16",time:"11:00–12:30",subject:"Physics",teacher:"Ms. Chen Wei",room:"B2",students:[3]},
+  {id:3,date:"2025-06-17",time:"2:00–3:30",subject:"English",teacher:"Mr. Raj Kumar",room:"A2",students:[1,2,3]},
+  {id:4,date:"2025-06-18",time:"9:00–10:30",subject:"Chemistry",teacher:"Ms. Chen Wei",room:"B1",students:[3]}
+];
+
+const DISCUSSIONS=[
+  {id:1,sid:1,sName:"Ahmad Faizi",question:"Can you explain fractions again?",date:"Jun 12",reply:"Sure! Think of it as slices of pizza…",replyDate:"Jun 12",resolved:true},
+  {id:2,sid:2,sName:"Priya Nair",question:"How do I solve quadratic equations faster?",date:"Jun 14",reply:null,replyDate:null,resolved:false}
+];
+
+/* ── TEACHER RANK RULES ── */
+const TIER_RULES=[
+  {tier:"Junior",min:0,max:1,rateRange:"RM 60–80/hr",color:"bg-gray-100 text-gray-700"},
+  {tier:"Senior",min:2,max:4,rateRange:"RM 100–130/hr",color:"bg-blue-100 text-blue-700"},
+  {tier:"Principal",min:5,max:7,rateRange:"RM 140–160/hr",color:"bg-purple-100 text-purple-700"},
+  {tier:"Master",min:8,max:99,rateRange:"RM 170–200/hr",color:"bg-amber-100 text-amber-700"}
+];
+
+/* ── CORP L&D DATA ── */
+const CORP_PROGRAMS=[
+  {id:1,name:"Leadership Excellence",dept:"Management",enrolled:24,completion:78,lance:82},
+  {id:2,name:"Data Analytics Fundamentals",dept:"Tech",enrolled:18,completion:65,lance:71},
+  {id:3,name:"Customer Service Pro",dept:"Operations",enrolled:31,completion:88,lance:87}
+];
+
+/* ── UI PRIMITIVES ── */
+function Card({children,className=""}){
+  return <div className={"bg-white rounded-2xl shadow-sm border border-gray-100 "+className}>{children}</div>;
+}
+function Btn({children,onClick,cls="bg-indigo-600 text-white hover:bg-indigo-700",full=false,disabled=false}){
+  return(
+    <button onClick={onClick} disabled={disabled}
+      className={"px-4 py-2 rounded-xl text-sm font-semibold transition-all "+(full?"w-full ":"")+cls+(disabled?" opacity-50 cursor-not-allowed":"")}>
+      {children}
+    </button>
+  );
+}
+function Bdg({label,cls="bg-indigo-100 text-indigo-700"}){
+  return <span className={"text-xs px-2 py-0.5 rounded-full font-medium "+cls}>{label}</span>;
+}
+function StatCard({icon,label,value,sub,cls=""}){
+  return(
+    <Card className={"p-5 "+cls}>
+      <div className="flex items-start justify-between mb-3">
+        <span className="text-2xl">{icon}</span>
+      </div>
+      <p className="text-3xl font-black text-gray-900">{value}</p>
+      <p className="text-sm font-semibold text-gray-700 mt-1">{label}</p>
+      {sub&&<p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+    </Card>
+  );
+}
+function ProgressBar({pct,color="bg-indigo-500",height="h-2"}){
+  return(
+    <div className={"bg-gray-100 rounded-full overflow-hidden "+height}>
+      <div className={color+" h-full rounded-full transition-all"} style={{width:pct+"%"}}/>
+    </div>
+  );
+}
+function Modal({title,children,onClose}){
+  return(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,.4)"}}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg pop">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <p className="font-bold text-gray-900">{title}</p>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&#x2715;</button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+function PageHdr({title,sub,action}){
+  return(
+    <div className="flex items-start justify-between mb-6">
+      <div>
+        <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+        {sub&&<p className="text-sm text-gray-500 mt-0.5">{sub}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
+function Tabs({items,active,onChange}){
+  return(
+    <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-5">
+      {items.map(it=>(
+        <button key={it.id} onClick={()=>onChange(it.id)}
+          className={"flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all "+(active===it.id?"bg-white shadow text-indigo-700":"text-gray-500 hover:text-gray-700")}>
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── LANCE INDEX CHART ── */
+function LanceChart({data,size=120}){
+  const max=100,min=40;
+  const w=size*2.2,h=size*1.2;
+  const pts=data.map((v,i)=>{
+    const x=20+(i/(data.length-1))*(w-40);
+    const y=h-20-((v-min)/(max-min))*(h-40);
+    return [x,y];
+  });
+  const path="M"+pts.map(p=>p[0]+","+p[1]).join(" L");
+  const fill=path+" L"+pts[pts.length-1][0]+","+(h-20)+" L"+pts[0][0]+","+(h-20)+" Z";
+  return(
+    <svg viewBox={"0 0 "+w+" "+h} width="100%">
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3"/>
+          <stop offset="100%" stopColor="#6366f1" stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d={fill} fill="url(#lg)"/>
+      <path d={path} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      {pts.map((p,i)=>(
+        <g key={i}>
+          <circle cx={p[0]} cy={p[1]} r="4" fill="#6366f1"/>
+          <text x={p[0]} y={p[1]-8} textAnchor="middle" fontSize="10" fill="#6366f1" fontWeight="bold">{data[i]}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/* ── LOGIN PAGE ── */
+const DEMO_ACCOUNTS={
+  teacher:{role:"teacher",name:"Sarah Lim Mei Ling",teacherId:1,branchId:1},
+  student:{role:"student",name:"Ahmad Faizi Bin Zulkifli",studentId:1,classId:1,branchId:1},
+  parent: {role:"parent", name:"En. Zulkifli (Parent)",studentId:1,childName:"Ahmad Faizi"},
+  admin:  {role:"admin",  name:"System Admin"},
+};
+function LoginPage({onLogin}){
+  const {lang,toggle}=useLang();
+  const t=k=>T[lang][k]||k;
+  const langBtn=lang==="en"?"中文":"English";
+  const roles=[
+    {key:"teacher",icon:"👩‍🏫",grad:"from-indigo-500 to-indigo-700"},
+    {key:"student",icon:"📖",  grad:"from-emerald-500 to-emerald-700"},
+    {key:"parent", icon:"👨‍👩‍👧",grad:"from-amber-500 to-amber-600"},
+    {key:"admin",  icon:"⚙️",  grad:"from-purple-500 to-purple-700"},
+  ];
+  return(
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 flex flex-col items-center justify-center p-6 relative">
+      <button onClick={toggle} className="absolute top-5 right-5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors">
+        🌐 {langBtn}
+      </button>
+      <div className="text-center mb-10 fadein">
+        <div className="w-18 h-18 mx-auto mb-4 flex items-center justify-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl">
+            <span className="text-white font-black text-2xl">Nx</span>
+          </div>
+        </div>
+        <h1 className="text-5xl font-black text-white tracking-tight">{t("app")}</h1>
+        <p className="text-indigo-300 mt-2 text-lg">{t("tagline")}</p>
+      </div>
+      <p className="text-white/50 text-sm mb-5">{t("select_role")}</p>
+      <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8 fadein">
+        {roles.map(({key,icon,grad})=>(
+          <button key={key} onClick={()=>onLogin(DEMO_ACCOUNTS[key])}
+            className="bg-white/8 hover:bg-white/15 backdrop-blur-sm border border-white/15 rounded-2xl p-5 text-left transition-all hover:scale-105 hover:shadow-2xl group cursor-pointer">
+            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-2xl mb-3 shadow-lg`}>{icon}</div>
+            <p className="font-semibold text-white text-sm">{t(`r_${key}`)}</p>
+            <p className="text-xs text-white/40 mt-1 leading-relaxed">{t(`d_${key}`)}</p>
+            <p className="text-xs text-indigo-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">{t("sign_in")} →</p>
+          </button>
+        ))}
+      </div>
+      <p className="text-white/25 text-xs text-center max-w-sm">{t("corp_note")}</p>
+    </div>
+  );
+}
+
+/* ── GROWTH PROFILE ── */
+function GrowthProfile({student,mode}){
+  const {lang}=useLang();
+  const t=k=>T[lang][k]||k;
+  const latest=student.lance[student.lance.length-1];
+  const prev=student.lance[student.lance.length-2];
+  const change=latest-prev;
+  const pct=Math.round((student.globalRank/student.totalStudents)*100);
+  const topPct=100-pct;
+  return(
+    <div className="fadein space-y-4">
+      <PageHdr title={t("growth")} sub={student.name+" · "+student.grade}/>
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard icon="📈" label={t("lanceIdx")} value={latest} sub={(change>0?"+":"")+change+" this month"} cls="col-span-1"/>
+        <StatCard icon="🌍" label={t("rank")} value={"#"+student.globalRank} sub={"Top "+topPct+"%"} cls="col-span-1"/>
+        <StatCard icon="⭐" label="Tests Passed" value={student.testScores.filter(s=>s>=80).length+"/"+student.testScores.length} sub="Score >= 80" cls="col-span-1"/>
+      </div>
+      <Card className="p-5">
+        <p className="font-semibold text-gray-800 mb-3">📊 {t("lanceIdx")} Trend (6 months)</p>
+        <LanceChart data={student.lance}/>
+      </Card>
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="p-5">
+          <p className="font-semibold text-gray-800 mb-3">💪 Strengths</p>
+          <div className="space-y-2">
+            {student.strengths.map(s=>(
+              <div key={s} className="flex items-center gap-2">
+                <span className="text-green-500">✓</span>
+                <span className="text-sm text-gray-700">{s}</span>
+              </div>
+            ))}
+          </div>
+          <p className="font-semibold text-gray-800 mt-4 mb-3">⚠️ Needs Work</p>
+          <div className="space-y-2">
+            {student.weaknesses.map(w=>(
+              <div key={w} className="flex items-center gap-2">
+                <span className="text-amber-500">!</span>
+                <span className="text-sm text-gray-700">{w}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card className="p-5">
+          <p className="font-semibold text-gray-800 mb-3">❌ Error Sets</p>
+          <div className="space-y-3">
+            {student.errorSets.map(e=>(
+              <div key={e.topic}>
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>{e.topic}</span><span>{e.count} errors</span>
+                </div>
+                <ProgressBar pct={Math.min(100,e.count*5)} color="bg-red-400"/>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+      <Card className="p-5 bg-indigo-50 border-indigo-200">
+        <p className="font-semibold text-indigo-800 mb-2">🎯 Career Plan &amp; Recommendation</p>
+        <p className="text-sm text-indigo-700">{student.plan}</p>
+        <div className="mt-3 pt-3 border-t border-indigo-200">
+          <p className="text-xs font-semibold text-indigo-500 mb-1">Suggested Resources</p>
+          <div className="flex gap-2 flex-wrap">
+            {student.weaknesses.map(w=>(
+              <span key={w} className="text-xs bg-white text-indigo-700 border border-indigo-200 px-2 py-1 rounded-lg">{w} Workbook</span>
+            ))}
+            <span className="text-xs bg-white text-indigo-700 border border-indigo-200 px-2 py-1 rounded-lg">Mock Test Pack</span>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ── TEACHER APP ── */
+function TeacherApp({user,students,sessions,discussions,setDiscussions,onLogout}){
+  const {lang,toggle}=useLang();
+  const t=k=>T[lang][k]||k;
+  const [page,setPage]=useState("overview");
+  const nav=[
+    {id:"overview",icon:"🏠",label:t("overview")},
+    {id:"marking",icon:"✏️",label:t("marking")},
+    {id:"schedule",icon:"📅",label:t("schedule")},
+    {id:"growth",icon:"📈",label:t("growth")},
+    {id:"discussion",icon:"💬",label:t("discussion")}
+  ];
+  return <AppShell user={user} nav={nav} page={page} setPage={setPage} onLogout={onLogout} toggle={toggle} lang={lang}>
+    {page==="overview"&&<TOverview students={students} sessions={sessions} discussions={discussions}/>}
+    {page==="marking"&&<TMarking students={students}/>}
+    {page==="schedule"&&<ScheduleView sessions={sessions} role="teacher"/>}
+    {page==="growth"&&<TGrowthView students={students}/>}
+    {page==="discussion"&&<TDiscussion discussions={discussions} setDiscussions={setDiscussions}/>}
+  </AppShell>;
+}
+function TOverview({students,sessions,discussions}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const today=sessions.filter(s=>s.date==="2025-06-16");
+  const pending=discussions.filter(d=>!d.resolved);
+  return(
+    <div className="fadein">
+      <PageHdr title={t("overview")} sub="Welcome back!"/>
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <StatCard icon="👨‍🎓" label="Students" value={students.length} sub="active"/>
+        <StatCard icon="📅" label="Today" value={today.length} sub="classes"/>
+        <StatCard icon="💬" label="Pending" value={pending.length} sub="Q&amp;A replies"/>
+      </div>
+      <Card className="p-5">
+        <p className="font-semibold text-gray-800 mb-3">📅 Today's Classes</p>
+        {today.length===0&&<p className="text-sm text-gray-400">{t("noData")}</p>}
+        <div className="space-y-2">
+          {today.map(s=>(
+            <div key={s.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+              <span className="text-lg">📚</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">{s.subject}</p>
+                <p className="text-xs text-gray-500">{s.time} · {s.room}</p>
+              </div>
+              <Bdg label={s.students.length+" students"}/>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+function TMarking({students}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const [sel,setSel]=useState(null);const [score,setScore]=useState("85");
+  return(
+    <div className="fadein">
+      <PageHdr title={t("marking")} sub={students.length+" students"}/>
+      <div className="space-y-3">
+        {students.map(s=>{
+          const latest=s.testScores[s.testScores.length-1];
+          return(
+            <Card key={s.id} className="p-4 flex items-center gap-4">
+              <span className="text-2xl">{s.avatar}</span>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">{s.name}</p>
+                <p className="text-xs text-gray-500">{s.grade}</p>
+              </div>
+              <div className="text-right mr-3">
+                <p className="font-bold text-indigo-600">{latest}/100</p>
+                <p className="text-xs text-gray-400">last test</p>
+              </div>
+              <Btn onClick={()=>setSel(s)} cls="bg-indigo-600 text-white hover:bg-indigo-700">Mark</Btn>
+            </Card>
+          );
+        })}
+      </div>
+      {sel&&(
+        <Modal title={"Mark — "+sel.name} onClose={()=>setSel(null)}>
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 mb-1">Score (0–100)</p>
+              <input type="number" value={score} onChange={e=>setScore(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"/>
+            </div>
+            <div className="flex gap-2">
+              <Btn full onClick={()=>setSel(null)}>Save ✓</Btn>
+              <Btn cls="bg-gray-100 text-gray-700 hover:bg-gray-200" onClick={()=>setSel(null)}>{t("cancel")}</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+function TGrowthView({students}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const [sel,setSel]=useState(students[0]);
+  return(
+    <div className="fadein">
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {students.map(s=>(
+          <button key={s.id} onClick={()=>setSel(s)}
+            className={"px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all "+(sel.id===s.id?"bg-indigo-600 text-white border-indigo-600":"border-gray-200 text-gray-600 hover:border-indigo-300")}>
+            {s.avatar} {s.name}
+          </button>
+        ))}
+      </div>
+      <GrowthProfile student={sel}/>
+    </div>
+  );
+}
+function TDiscussion({discussions,setDiscussions}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const [sel,setSel]=useState(null);const [reply,setReply]=useState("");
+  const submit=()=>{
+    setDiscussions(prev=>prev.map(d=>d.id===sel.id?{...d,reply,replyDate:"Jun "+new Date().getDate(),resolved:true}:d));
+    setSel(null);setReply("");
+  };
+  return(
+    <div className="fadein">
+      <PageHdr title={t("discussion")} sub={discussions.filter(d=>!d.resolved).length+" pending"}/>
+      <div className="space-y-3">
+        {discussions.map(d=>(
+          <Card key={d.id} className={"p-4 "+(!d.resolved?"border-l-4 border-amber-400":"")}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-semibold text-sm text-gray-900">{d.sName}</span>
+              <span className="text-xs text-gray-400 ml-auto">{d.date}</span>
+              <Bdg label={d.resolved?"Answered ✓":"Pending"} cls={d.resolved?"bg-green-100 text-green-700":"bg-amber-100 text-amber-700"}/>
+            </div>
+            <p className="text-sm text-gray-700 mb-2">{d.question}</p>
+            {d.reply&&<p className="text-xs text-indigo-600 bg-indigo-50 rounded-lg p-2">↩ {d.reply}</p>}
+            {!d.resolved&&<Btn onClick={()=>{setSel(d);setReply("");}} cls="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 mt-2">Reply</Btn>}
+          </Card>
+        ))}
+      </div>
+      {sel&&(
+        <Modal title="Reply" onClose={()=>setSel(null)}>
+          <div className="space-y-3">
+            <p className="text-sm bg-amber-50 rounded-lg p-3">{sel.question}</p>
+            <textarea value={reply} onChange={e=>setReply(e.target.value)} rows="3"
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+              placeholder="Write your reply…"/>
+            <div className="flex gap-2">
+              <Btn full onClick={submit}>{t("send")} ✓</Btn>
+              <Btn cls="bg-gray-100 text-gray-700 hover:bg-gray-200" onClick={()=>setSel(null)}>{t("cancel")}</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ── STUDENT APP ── */
+function StudentApp({user,students,discussions,setDiscussions,onLogout}){
+  const {lang,toggle}=useLang();
+  const t=k=>T[lang][k]||k;
+  const [page,setPage]=useState("overview");
+  const student=students[0];
+  const nav=[
+    {id:"overview",icon:"🏠",label:t("overview")},
+    {id:"growth",icon:"📈",label:t("growth")},
+    {id:"results",icon:"📊",label:t("results")},
+    {id:"schedule",icon:"📅",label:t("schedule")},
+    {id:"discussion",icon:"💬",label:t("discussion")}
+  ];
+  return <AppShell user={user} nav={nav} page={page} setPage={setPage} onLogout={onLogout} toggle={toggle} lang={lang}>
+    {page==="overview"&&<SOverview student={student}/>}
+    {page==="growth"&&<GrowthProfile student={student}/>}
+    {page==="results"&&<SResults student={student}/>}
+    {page==="schedule"&&<ScheduleView sessions={[]} role="student"/>}
+    {page==="discussion"&&<SDiscussion student={student} discussions={discussions} setDiscussions={setDiscussions}/>}
+  </AppShell>;
+}
+function SOverview({student}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const latest=student.lance[student.lance.length-1];
+  return(
+    <div className="fadein">
+      <PageHdr title={"Hello, "+student.name+" 👋"} sub={student.grade}/>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <StatCard icon="📈" label={t("lanceIdx")} value={latest} sub="Your score"/>
+        <StatCard icon="🌍" label={t("rank")} value={"#"+student.globalRank} sub={"of "+student.totalStudents.toLocaleString()}/>
+      </div>
+      <Card className="p-5">
+        <p className="font-semibold text-gray-800 mb-3">📊 Lance Index Trend</p>
+        <LanceChart data={student.lance}/>
+      </Card>
+    </div>
+  );
+}
+function SResults({student}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const avg=Math.round(student.testScores.reduce((a,b)=>a+b,0)/student.testScores.length);
+  return(
+    <div className="fadein">
+      <PageHdr title={t("results")} sub={"Average: "+avg+"/100"}/>
+      <div className="space-y-3">
+        {student.testScores.map((sc,i)=>(
+          <Card key={i} className="p-4 flex items-center gap-4">
+            <span className="text-2xl">{sc>=80?"🌟":sc>=65?"✅":"⚠️"}</span>
+            <div className="flex-1">
+              <p className="font-semibold text-gray-900">Test {i+1}</p>
+              <ProgressBar pct={sc} color={sc>=80?"bg-green-500":sc>=65?"bg-amber-500":"bg-red-500"} height="h-1.5"/>
+            </div>
+            <p className="font-bold text-gray-900 w-16 text-right">{sc}/100</p>
+          </Card>
+        ))}
+      </div>
+      <Card className="p-5 mt-4">
+        <p className="font-semibold text-gray-800 mb-3">❌ Error Sets</p>
+        <div className="space-y-3">
+          {student.errorSets.map(e=>(
+            <div key={e.topic} className="p-3 bg-red-50 rounded-xl">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="font-semibold text-red-800">{e.topic}</span>
+                <span className="text-red-500">{e.count} errors</span>
+              </div>
+              <ProgressBar pct={Math.min(100,e.count*8)} color="bg-red-400"/>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+function SDiscussion({student,discussions,setDiscussions}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const [q,setQ]=useState("");const [show,setShow]=useState(false);
+  const myD=discussions.filter(d=>d.sid===student.id);
+  const post=()=>{
+    if(!q.trim())return;
+    setDiscussions(prev=>[...prev,{id:Date.now(),sid:student.id,sName:student.name,question:q,date:"Jun "+new Date().getDate(),reply:null,replyDate:null,resolved:false}]);
+    setQ("");setShow(false);
+  };
+  return(
+    <div className="fadein">
+      <PageHdr title={t("discussion")} action={<Btn onClick={()=>setShow(true)}>+ Ask</Btn>}/>
+      {show&&(
+        <Card className="p-4 mb-4 border-indigo-200">
+          <textarea value={q} onChange={e=>setQ(e.target.value)} rows="3"
+            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm mb-3"
+            placeholder="Type your question…"/>
+          <div className="flex gap-2">
+            <Btn onClick={post}>{t("send")}</Btn>
+            <Btn cls="bg-gray-100 text-gray-700 hover:bg-gray-200" onClick={()=>setShow(false)}>{t("cancel")}</Btn>
+          </div>
+        </Card>
+      )}
+      {myD.length===0&&<p className="text-sm text-gray-400 text-center py-12">{t("noData")}</p>}
+      <div className="space-y-3">
+        {myD.map(d=>(
+          <Card key={d.id} className={"p-4 "+(!d.resolved?"border-l-4 border-amber-400":"")}>
+            <p className="text-sm font-medium text-gray-800 mb-2">{d.question}</p>
+            {d.reply
+              ?<p className="text-xs text-indigo-600 bg-indigo-50 rounded-lg p-2">👩‍🏫 {d.reply}</p>
+              :<Bdg label="Awaiting reply…" cls="bg-amber-100 text-amber-700"/>
+            }
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── PARENT APP ── */
+function ParentApp({user,students,sessions,onLogout}){
+  const {lang,toggle}=useLang();
+  const t=k=>T[lang][k]||k;
+  const [page,setPage]=useState("overview");
+  const student=students[0];
+  const nav=[
+    {id:"overview",icon:"🏠",label:t("overview")},
+    {id:"growth",icon:"📈",label:t("growth")},
+    {id:"schedule",icon:"📅",label:t("schedule")},
+    {id:"finance",icon:"💰",label:t("finance")}
+  ];
+  return <AppShell user={user} nav={nav} page={page} setPage={setPage} onLogout={onLogout} toggle={toggle} lang={lang}>
+    {page==="overview"&&<POverview student={student}/>}
+    {page==="growth"&&<GrowthProfile student={student}/>}
+    {page==="schedule"&&<ScheduleView sessions={sessions} role="parent"/>}
+    {page==="finance"&&<PFinance student={student}/>}
+  </AppShell>;
+}
+function POverview({student}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const latest=student.lance[student.lance.length-1];
+  const prev=student.lance[student.lance.length-2];
+  const wallet=WALLETS.find(w=>w.sid===student.id)||{balance:0};
+  return(
+    <div className="fadein">
+      <PageHdr title={"Hi 👋"} sub={student.name+"'s progress summary"}/>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <StatCard icon="📈" label={t("lanceIdx")} value={latest} sub={"+"+(latest-prev)+" this month"}/>
+        <StatCard icon="🌍" label={t("rank")} value={"#"+student.globalRank} sub={"Top "+Math.round((1-student.globalRank/student.totalStudents)*100)+"%"}/>
+      </div>
+      <Card className="p-5 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-semibold text-gray-800">📊 {t("lanceIdx")} — 6 Month Trend</p>
+          <Bdg label={latest>=80?"Excellent":latest>=70?"Good":"Improving"} cls={latest>=80?"bg-green-100 text-green-700":latest>=70?"bg-blue-100 text-blue-700":"bg-amber-100 text-amber-700"}/>
+        </div>
+        <LanceChart data={student.lance}/>
+      </Card>
+      <Card className="p-5 bg-amber-50 border-amber-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-amber-800">💳 Wallet Balance</p>
+            <p className="text-2xl font-black text-amber-900">RM {wallet.balance}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-amber-600">{wallet.used} credits used</p>
+            <Btn cls="bg-amber-500 text-white hover:bg-amber-600 mt-1">Top Up</Btn>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+function PFinance({student}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const records=FIN_RECORDS.filter(r=>r.sid===student.id);
+  const total=records.reduce((a,r)=>a+r.amount,0);
+  const wallet=WALLETS.find(w=>w.sid===student.id)||{balance:0};
+  return(
+    <div className="fadein">
+      <PageHdr title={t("finance")} sub={"Total spent: RM "+total}/>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <StatCard icon="💳" label="Wallet Balance" value={"RM "+wallet.balance} sub="Available credits"/>
+        <StatCard icon="📋" label="Sessions" value={records.length} sub="this month"/>
+      </div>
+      <Card className="p-5">
+        <p className="font-semibold text-gray-800 mb-3">📋 Payment History</p>
+        <div className="space-y-3">
+          {records.map(r=>(
+            <div key={r.id} className="border-b border-gray-50 pb-3">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm font-semibold text-gray-800">{r.desc}</p>
+                <p className="text-sm font-bold text-red-600">-RM {r.amount}</p>
+              </div>
+              <p className="text-xs text-gray-400">{r.date}</p>
+              <div className="flex gap-2 mt-2 flex-wrap">
+                <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">Teacher: RM {r.breakdown.teacher}</span>
+                <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded">Rent: RM {r.breakdown.rent}</span>
+                <span className="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded">Tax: RM {r.breakdown.tax}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ── ADMIN APP ── */
+function AdminApp({user,students,teachers,sessions,onLogout,mode}){
+  const {lang,toggle}=useLang();
+  const t=k=>T[lang][k]||k;
+  const [page,setPage]=useState("overview");
+  const isCorp=mode==="corporate";
+  const nav=[
+    {id:"overview",icon:"🏠",label:t("overview")},
+    {id:"finance",icon:"💰",label:t("finance")},
+    {id:"crm",icon:"📣",label:t("crm")},
+    {id:"staff",icon:"👥",label:t("staff")},
+    {id:"growth",icon:"📈",label:isCorp?"L&D Programs":t("growth")}
+  ];
+  return <AppShell user={user} nav={nav} page={page} setPage={setPage} onLogout={onLogout} toggle={toggle} lang={lang}>
+    {page==="overview"&&<AOverview students={students} teachers={teachers} sessions={sessions} isCorp={isCorp}/>}
+    {page==="finance"&&<AFinance students={students} isCorp={isCorp}/>}
+    {page==="crm"&&<ACRM/>}
+    {page==="staff"&&<AStaff teachers={teachers}/>}
+    {page==="growth"&&(isCorp?<ACorpLD/>:<TGrowthView students={students}/>)}
+  </AppShell>;
+}
+function AOverview({students,teachers,sessions,isCorp}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const revenue=FIN_RECORDS.reduce((a,r)=>a+r.amount,0);
+  const totalLeads=CRM_SOURCES.reduce((a,s)=>a+s.leads,0);
+  const enrolled=CRM_SOURCES.reduce((a,s)=>a+s.enrolled,0);
+  return(
+    <div className="fadein">
+      <PageHdr title={t("overview")} sub={isCorp?"Corporate L&D Dashboard":"Tuition Centre Dashboard"}/>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <StatCard icon="👨‍🎓" label={isCorp?"Learners":"Students"} value={students.length} sub="active"/>
+        <StatCard icon="👩‍🏫" label={isCorp?"Trainers":"Teachers"} value={teachers.length} sub="on staff"/>
+        <StatCard icon="💰" label="Revenue (MTD)" value={"RM "+revenue} sub="this month"/>
+        <StatCard icon="📣" label="Pipeline" value={enrolled+"/"+totalLeads} sub="enrolled/leads"/>
+      </div>
+      <Card className="p-5">
+        <p className="font-semibold text-gray-800 mb-3">📋 Upcoming Sessions</p>
+        <div className="space-y-2">
+          {sessions.slice(0,3).map(s=>(
+            <div key={s.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+              <span className="text-lg">📚</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">{s.subject}</p>
+                <p className="text-xs text-gray-400">{s.date} · {s.time} · {s.teacher}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+function AFinance({students,isCorp}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const totalRev=FIN_RECORDS.reduce((a,r)=>a+r.amount,0);
+  const totalTeacher=FIN_RECORDS.reduce((a,r)=>a+r.breakdown.teacher,0);
+  const totalRent=FIN_RECORDS.reduce((a,r)=>a+r.breakdown.rent,0);
+  const totalTax=FIN_RECORDS.reduce((a,r)=>a+r.breakdown.tax,0);
+  const totalProfit=FIN_RECORDS.reduce((a,r)=>a+r.breakdown.profit,0);
+  const pct=v=>Math.round((v/totalRev)*100);
+  return(
+    <div className="fadein">
+      <PageHdr title={t("finance")} sub={"MTD Revenue: RM "+totalRev}/>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <StatCard icon="💰" label="Total Revenue" value={"RM "+totalRev}/>
+        <StatCard icon="📈" label="Net Profit" value={"RM "+totalProfit} sub={pct(totalProfit)+"%"}/>
+      </div>
+      <Card className="p-5 mb-4">
+        <p className="font-semibold text-gray-800 mb-4">📊 Cost Breakdown</p>
+        {[
+          {label:"Teacher Fees",val:totalTeacher,color:"bg-indigo-500"},
+          {label:"Rent",val:totalRent,color:"bg-amber-500"},
+          {label:"Tax",val:totalTax,color:"bg-red-400"},
+          {label:"Net Profit",val:totalProfit,color:"bg-green-500"}
+        ].map(item=>(
+          <div key={item.label} className="mb-3">
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-gray-600">{item.label}</span>
+              <span className="font-semibold text-gray-800">RM {item.val} ({pct(item.val)}%)</span>
+            </div>
+            <ProgressBar pct={pct(item.val)} color={item.color}/>
+          </div>
+        ))}
+      </Card>
+      <Card className="p-5">
+        <p className="font-semibold text-gray-800 mb-3">💳 Student Wallets</p>
+        <div className="space-y-3">
+          {WALLETS.map(w=>{
+            const s=students.find(st=>st.id===w.sid);
+            const lowBalance=w.balance<200;
+            return(
+              <div key={w.sid} className={"p-3 rounded-xl "+(lowBalance?"bg-red-50 border border-red-200":"bg-gray-50")}>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-semibold text-gray-800">{s?s.name:"Unknown"}</p>
+                  <p className={"text-sm font-bold "+(lowBalance?"text-red-600":"text-gray-800")}>RM {w.balance}</p>
+                </div>
+                {lowBalance&&<p className="text-xs text-red-500">⚠️ Low balance — follow up needed</p>}
+                <ProgressBar pct={Math.round((w.balance/w.topup)*100)} color={lowBalance?"bg-red-400":"bg-indigo-500"} height="h-1"/>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
+  );
+}
+function ACRM(){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  const totalLeads=CRM_SOURCES.reduce((a,s)=>a+s.leads,0);
+  const enrolled=CRM_SOURCES.reduce((a,s)=>a+s.enrolled,0);
+  const totalRev=CRM_SOURCES.reduce((a,s)=>a+s.rev,0);
+  const maxCount=CRM_PIPELINE[0].count;
+  return(
+    <div className="fadein">
+      <PageHdr title={t("crm")} sub={totalLeads+" leads · "+enrolled+" enrolled · RM "+totalRev.toLocaleString()}/>
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <StatCard icon="🎯" label="Total Leads" value={totalLeads}/>
+        <StatCard icon="✅" label="Enrolled" value={enrolled}/>
+        <StatCard icon="📊" label="Conv. Rate" value={Math.round((enrolled/totalLeads)*100)+"%"}/>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="p-5">
+          <p className="font-semibold text-gray-800 mb-4">📊 Lead Sources</p>
+          <div className="space-y-3">
+            {CRM_SOURCES.map(s=>{
+              const rate=Math.round((s.enrolled/s.leads)*100);
+              return(
+                <div key={s.src}>
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{background:s.clr}}/>
+                      <span className="font-medium text-gray-700">{s.src}</span>
+                    </div>
+                    <span>{s.leads} → {s.enrolled} ({rate}%)</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{width:rate+"%",background:s.clr}}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+        <Card className="p-5">
+          <p className="font-semibold text-gray-800 mb-4">🔽 Pipeline</p>
+          <div className="space-y-2">
+            {CRM_PIPELINE.map((p,i)=>{
+              const w=Math.round((p.count/maxCount)*100);
+              return(
+                <div key={p.stage}>
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>{p.stage}</span><span className="font-semibold">{p.count}</span>
+                  </div>
+                  <div className="h-6 bg-gray-100 rounded-lg overflow-hidden">
+                    <div className="h-full bg-indigo-600 rounded-lg flex items-center justify-end pr-2"
+                      style={{width:w+"%",opacity:1-i*0.12}}>
+                      <span className="text-white text-xs font-bold">{w}%</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+function AStaff({teachers}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  return(
+    <div className="fadein">
+      <PageHdr title={t("staff")} sub={teachers.length+" teachers"}/>
+      <div className="space-y-3 mb-6">
+        {teachers.map(tc=>{
+          const rule=TIER_RULES.find(r=>r.tier===tc.tier)||TIER_RULES[0];
+          return(
+            <Card key={tc.id} className="p-4 flex items-center gap-4">
+              <span className="text-2xl">👩‍🏫</span>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">{tc.name}</p>
+                <p className="text-xs text-gray-500">{tc.subject} · {tc.sessions} sessions</p>
+              </div>
+              <div className="text-right">
+                <Bdg label={tc.tier} cls={rule.color}/>
+                <p className="text-xs text-gray-400 mt-1">RM {tc.rate}/hr</p>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+      <Card className="p-5">
+        <p className="font-semibold text-gray-800 mb-3">📋 Tier Rules</p>
+        <div className="space-y-2">
+          {TIER_RULES.map(r=>(
+            <div key={r.tier} className="flex items-center justify-between p-2 rounded-xl bg-gray-50">
+              <Bdg label={r.tier} cls={r.color}/>
+              <span className="text-xs text-gray-500">{r.min}–{r.max} yrs exp · {r.rateRange}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+function ACorpLD(){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  return(
+    <div className="fadein">
+      <PageHdr title="L&amp;D Programs" sub="Corporate training overview"/>
+      <div className="space-y-4">
+        {CORP_PROGRAMS.map(p=>(
+          <Card key={p.id} className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="font-semibold text-gray-900">{p.name}</p>
+                <p className="text-xs text-gray-400">{p.dept}</p>
+              </div>
+              <Bdg label={"Lance "+p.lance} cls="bg-indigo-100 text-indigo-700"/>
+            </div>
+            <div className="flex gap-4 text-xs text-gray-500 mb-2">
+              <span>👥 {p.enrolled} learners</span>
+              <span>✅ {p.completion}% complete</span>
+            </div>
+            <ProgressBar pct={p.completion} color={p.completion>=80?"bg-green-500":"bg-indigo-500"}/>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── SCHEDULE ── */
+function ScheduleView({sessions,role}){
+  const {lang}=useLang();const t=k=>T[lang][k]||k;
+  return(
+    <div className="fadein">
+      <PageHdr title={t("schedule")}/>
+      {sessions.length===0&&<p className="text-sm text-gray-400 text-center py-12">{t("noData")}</p>}
+      <div className="space-y-3">
+        {sessions.map(s=>(
+          <Card key={s.id} className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center">
+                <span className="text-lg">📚</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">{s.subject}</p>
+                <p className="text-xs text-gray-500">{s.date} · {s.time}</p>
+                <p className="text-xs text-gray-400">{s.teacher} · Room {s.room}</p>
+              </div>
+              <Bdg label={s.students.length+" pax"}/>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── AI CHATBOT ── */
+function AIChatbot({user}){
+  const [open,setOpen]=useState(false);
+  const [msgs,setMsgs]=useState([{role:"ai",text:"Hi "+user.name+"! How can I help you today? 🤖"}]);
+  const [input,setInput]=useState("");
+  const ref=useRef(null);
+  useEffect(()=>{if(ref.current)ref.current.scrollTop=ref.current.scrollHeight;},[msgs]);
+  const send=()=>{
+    if(!input.trim())return;
+    const q=input;setInput("");
+    setMsgs(m=>[...m,{role:"user",text:q}]);
+    setTimeout(()=>{
+      const r=q.toLowerCase().includes("lance")?"The Lance Index measures academic performance across multiple dimensions. A score above 80 is excellent! 📊"
+        :q.toLowerCase().includes("finance")?"Your current balance is RM 480. Last payment was RM 120 for Math on Jun 1. 💳"
+        :"That's a great question! Let me look into that for you. Please speak to your teacher for detailed guidance. 📚";
+      setMsgs(m=>[...m,{role:"ai",text:r}]);
+    },800);
+  };
+  return(
+    <>
+      <button onClick={()=>setOpen(o=>!o)}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center text-2xl hover:bg-indigo-700 transition-all z-40">
+        {open?"✕":"🤖"}
+      </button>
+      {open&&(
+        <div className="fixed bottom-24 right-6 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-40 pop flex flex-col" style={{height:400}}>
+          <div className="p-4 border-b border-gray-100 bg-indigo-600 rounded-t-2xl">
+            <p className="font-semibold text-white text-sm">🤖 AxNexus Assistant</p>
+          </div>
+          <div ref={ref} className="flex-1 p-4 overflow-y-auto space-y-3">
+            {msgs.map((m,i)=>(
+              <div key={i} className={"flex "+(m.role==="user"?"justify-end":"justify-start")}>
+                <div className={"max-w-[85%] px-3 py-2 rounded-xl text-sm "+(m.role==="user"?"bg-indigo-600 text-white":"bg-gray-100 text-gray-800")}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="p-3 border-t border-gray-100 flex gap-2">
+            <input value={input} onChange={e=>setInput(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&send()}
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm"
+              placeholder="Ask anything…"/>
+            <Btn onClick={send} cls="bg-indigo-600 text-white hover:bg-indigo-700">Send</Btn>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ── APP SHELL ── */
+function AppShell({user,nav,page,setPage,onLogout,toggle,lang,children}){
+  const t=k=>T[lang][k]||k;
+  return(
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 sticky top-0 z-30">
+        <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center">
+          <span className="text-white text-xs font-black">Ax</span>
+        </div>
+        <span className="font-bold text-gray-900 flex-1">{t("app")}</span>
+        <button onClick={toggle} className="text-xs text-gray-400 hover:text-gray-600 mr-2">
+          {lang==="en"?"中文":"EN"}
+        </button>
+        <button onClick={onLogout} className="text-xs text-gray-400 hover:text-red-500">{t("logout")}</button>
+      </header>
+      <div className="flex flex-1">
+        <nav className="w-56 bg-white border-r border-gray-100 p-3 flex flex-col gap-1 sticky top-14 h-screen overflow-y-auto">
+          <p className="text-xs font-semibold text-gray-400 px-3 py-1 mt-1">{user.name}</p>
+          {nav.map(item=>(
+            <button key={item.id} onClick={()=>setPage(item.id)}
+              className={"flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all "+(page===item.id?"bg-indigo-50 text-indigo-700 font-semibold":"text-gray-600 hover:bg-gray-50")}>
+              <span>{item.icon}</span>{item.label}
+            </button>
+          ))}
+        </nav>
+        <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+/* ── APP ROOT ── */
+function App(){
+  const [lang,setLang]=useState("en");
+  const toggle=()=>setLang(l=>l==="en"?"zh":"en");
+  const [user,setUser]=useState(null);
+  const [students,setStudents]=useState(STUDENTS);
+  const [teachers]=useState(TEACHERS);
+  const [sessions]=useState(SESSIONS);
+  const [discussions,setDiscussions]=useState(DISCUSSIONS);
+  const [mode,setMode]=useState("tuition");
+  const cp={students,sessions,teachers,discussions,setDiscussions};
+  return(
+    <LangCtx.Provider value={{lang,toggle}}>
+      {!user
+        ?<LoginPage onLogin={u=>setUser({...u})} mode={mode} setMode={setMode}/>
+        :<>
+          {user.role==="teacher"&&<TeacherApp user={user} {...cp} onLogout={()=>setUser(null)}/>}
+          {user.role==="student"&&<StudentApp user={user} {...cp} onLogout={()=>setUser(null)}/>}
+          {user.role==="parent"&&<ParentApp user={user} {...cp} onLogout={()=>setUser(null)}/>}
+          {user.role==="admin"&&<AdminApp user={user} {...cp} mode={mode} onLogout={()=>setUser(null)}/>}
+          <AIChatbot user={user}/>
+        </>
+      }
+    </LangCtx.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+
+<script>
+window.addEventListener('load',function(){
+  var src=document.getElementById('app-src').textContent;
+  try{
+    var result=Babel.transform(src,{presets:[['react',{runtime:'classic'}]]});
+    eval(result.code);
+  }catch(e){
+    document.getElementById('root').innerHTML='<div style="font:13px monospace;padding:20px;background:#fef2f2;border:2px solid red;margin:20px;border-radius:8px"><b>JSX Error:</b> '+e.message+'</div>';
+  }
+});
+</script>
+</body>
+</html>
